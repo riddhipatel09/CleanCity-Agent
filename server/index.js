@@ -4,34 +4,34 @@ const express = require("express");
 const cors = require("cors");
 const fetch = require("node-fetch"); // node-fetch@2
 const bodyParser = require("body-parser");
-const multer = require("multer"); // 📸 New
+const multer = require("multer");
 const nodemailer = require("nodemailer");
+const busboy = require("connect-busboy"); // ✅ Add this line
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// 📨 Gmail transporter setup
+// ✅ Gmail transporter setup
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "rmpatel9124@gmail.com",      
+    user: "rmpatel9124@gmail.com",
     pass: "bwmrgafrxvkhbcgz", // Use App Password only
   },
 });
 
-// 📸 File upload handler using memory storage
+// ✅ Enable parsing multipart/form-data for Render compatibility
+app.use(busboy());
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // max 10MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
 app.use(cors());
-// bodyParser.json() not needed for FormData/multipart
-// app.use(bodyParser.json());
 
-// 🚀 /api/chat route to handle complaint + media
+// 🚀 /api/chat route
 app.post("/api/chat", upload.single("media"), async (req, res) => {
   const { message } = req.body;
   const location = JSON.parse(req.body.location || "{}");
@@ -78,7 +78,6 @@ ${locText}
 
     res.json({ reply });
 
-    // 📎 Prepare attachment if media exists
     const attachments = media
       ? [
           {
@@ -89,7 +88,6 @@ ${locText}
         ]
       : [];
 
-    // 📩 Email Alert to You
     const mailOptions = {
       from: "CleanCityAgent <rmpatel9124@gmail.com>",
       to: "riddhidiwani035@gmail.com",
@@ -111,7 +109,7 @@ ${locText}
   }
 });
 
-// ✅ Start the backend
+// ✅ Start server
 app.listen(PORT, () => {
   console.log(`✅ CleanCityAgent backend running at http://localhost:${PORT}`);
 });
